@@ -2,14 +2,14 @@
 ## Что делали
 ### Блок 1 — Состояние кластера
 
-Посмотрели ноды:
+Посмотрел ноды:
 ```bash
 kubectl get nodes -o wide
 ```
 ![alt text](<screens/Вставленное изображение (3).png>)
 Нода desktop-control-plane в статусе Ready. Это нода, на которой крутятся все компоненты.
 
-Посмотрели системные поды:
+Посмотрел системные поды:
 ```bash
 kubectl get pods -n kube-system
 ```
@@ -17,13 +17,13 @@ kubectl get pods -n kube-system
 
 Все поды в статусе Running: kube-apiserver, etcd, kube-scheduler, controller-manager, coredns, kube-proxy.
 
-Попробовали посмотреть манифесты control plane:
+Попробовал посмотреть манифесты control plane:
 ```bash
 ls /etc/kubernetes/manifests/
 cat /etc/kubernetes/manifests/kube-apiserver.yaml
 ```
 
-Ничего не нашли. Оказалось, что манифесты лежат не на хосте, а внутри VM. Пришлось заходить туда:
+Ничего не нашел. Оказалось, что манифесты лежат не на хосте, а внутри VM. Пришлось заходить туда:
 ```bash
 docker exec desktop-control-plane ls /etc/kubernetes/manifests/
 ```
@@ -32,25 +32,25 @@ docker exec desktop-control-plane ls /etc/kubernetes/manifests/
 ![alt text](<screens/Вставленное изображение (2).png>)
 ### Блок 2 — Первый под
 
-Запустили под:
+Запустил под:
 ```bash
 kubectl run nginx --image=nginx:alpine --port=80
 ```
 Проблема: под не запускался, висел в ErrImagePull и ImagePullBackOff. Docker Hub не качал образы из-за проблем с DNS.
 
-Как исправили:
+Как исправил:
 
-    Скачали образ на хосте: docker pull nginx:alpine
+* Скачали образ на хосте: docker pull nginx:alpine
 
-    Сохранили в tar: docker save nginx:alpine -o nginx-alpine.tar
+* Сохранили в tar: docker save nginx:alpine -o nginx-alpine.tar
 
-    Скопировали в контейнер кластера: docker cp nginx-alpine.tar desktop-control-plane:/
+* Скопировали в контейнер кластера: docker cp nginx-alpine.tar desktop-control-plane:/
 
-    Импортировали в containerd: docker exec desktop-control-plane ctr images import /nginx-alpine.tar
+* Импортировали в containerd: docker exec desktop-control-plane ctr images import /nginx-alpine.tar
 
 После этого под запустился.
 
-Зашли внутрь:
+Зашел внутрь:
 ```bash
 kubectl exec -it nginx -- sh
 ```
@@ -70,7 +70,7 @@ kubectl exec -it nginx -- sh
 
 ### Блок 3 — Под через YAML
 
-Создали файл pod.yaml с двумя контейнерами:
+Создал файл pod.yaml с двумя контейнерами:
 
 * nginx — основной веб-сервер
 
@@ -79,11 +79,11 @@ kubectl exec -it nginx -- sh
 Общие проблемы:
 busybox тоже не качался, пришлось делать ту же процедуру: docker pull busybox, сохранить, скопировать, импортировать
 
-Применили:
+Применил:
 ```bash
 kubectl apply -f pod.yaml
 ```
-Проверили:
+Проверил:
 
     kubectl get pods — оба контейнера Running
 
@@ -94,11 +94,11 @@ kubectl apply -f pod.yaml
 ![alt text](<screens/Вставленное изображение (6).png>)
 ### Блок 4 — Самовосстановление
 
-Убили процесс nginx внутри контейнера:
+Убил процесс nginx внутри контейнера:
 ```bash
 kubectl exec my-webserver -c nginx -- kill 1
 ```
-Наблюдали:
+Наблюдал:
 ```bash
 kubectl get pods -w
 ```

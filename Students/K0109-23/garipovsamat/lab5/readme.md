@@ -5,7 +5,7 @@
 
 ## Блок 1 — Deployment
 
-Создали файл deployment.yaml с тремя репликами приложения. Использовали образ nginxdemos/hello:plain-text, который показывает имя хоста пода, это удобно, чтобы видеть, на какой под прилетел запрос.
+Создал файл deployment.yaml с тремя репликами приложения. Использовал образ nginxdemos/hello:plain-text, который показывает имя хоста пода, это удобно, чтобы видеть, на какой под прилетел запрос.
 
 Настройки:
 
@@ -15,11 +15,11 @@
 
     readinessProbe — проверяет что под готов принимать трафик
 
-Применили:
+Применил:
 ```bash
 kubectl apply -f deployment.yaml
 ```
-Глянули:
+Глянул:
 ```bash
 kubectl get pods
 ```
@@ -28,7 +28,7 @@ kubectl get pods
 Все три поднялись. Но сначала была фигнюшка, что образ не качался, ImagePullBackOff. Пришлось опять ручками качать и загружать.
 
 ## Блок 2 — Service + Rolling Update
-Создали Service типа NodePort
+Создал Service типа NodePort
 
 service.yaml:
 ```yaml
@@ -48,11 +48,11 @@ spec:
 Это чтобы можно было достучаться до приложения снаружи кластера.
 Rolling update — обновление без остановки
 
-Открыли два терминала:
+Открыл два терминала:
 
-В одном запустили цикл curl который стучался на сервис и выводил имя пода
+В одном запустил цикл curl который стучался на сервис и выводил имя пода
 
-Во втором обновили образ на latest:
+Во втором обновил образ на latest:
 
 ```bash
 kubectl set image deployment/webapp webapp=nginxdemos/hello:latest
@@ -78,21 +78,22 @@ kubectl rollout history deployment/webapp
 
     webapp.local/api другой сервис, который просто возвращает "Hello from API"
 
-Установили Ingress Controller
+Установил Ingress Controller
 
 Для kind ингресс не ставится по умолчанию, пришлось накатывать:
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
 
-Ждали пока поды поднимутся, они появились в неймспейсе ingress-nginx.
-Создали второй сервис для API
+Ждал пока поды поднимутся, они появились в неймспейсе ingress-nginx.
+
+Создал второй сервис для API
 ```bash
 kubectl create deployment api-backend --image=hashicorp/http-echo -- /http-echo -text="Hello from API"
 kubectl expose deployment api-backend --port=5678 --name=api-svc
 ```
 
-Написали Ingress
+Написал Ingress
 
 ingress.yaml с правилами:
 
@@ -100,17 +101,17 @@ ingress.yaml с правилами:
 
     /api # api-svc:5678
 
-Добавили хост webapp.local в /etc/hosts:
+Добавил хост webapp.local в /etc/hosts:
 ```bash
 echo "127.0.0.1 webapp.local" | sudo tee -a /etc/hosts
 ```
 
-Пробросили порт ингресса:
+Пробросил порт ингресса:
 ```bash
 kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8080:80 --address 0.0.0.0
 ```
 
-Проверили
+Проверил
 ```bash
 curl webapp.local
 ```
@@ -126,7 +127,7 @@ curl webapp.local/api
 
 ## Блок 4 — Типы Service
 
-Создали три типа и посмотрели разницу:
+Создал три типа и посмотрели разницу:
 
 ### ClusterIP
 ```bash
@@ -134,7 +135,7 @@ kubectl expose deployment webapp --name=webapp-clusterip --type=ClusterIP --port
 kubectl get svc webapp-clusterip
 ```
 
-Доступен только внутри кластера. Проверили, зайдя в под с alpine:
+Доступен только внутри кластера. Проверил, зайдя в под с alpine:
 ```bash
 kubectl run test --rm -it --image=alpine -- sh
 wget -qO- webapp-clusterip | grep "Server name"
